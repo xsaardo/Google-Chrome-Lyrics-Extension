@@ -11,6 +11,7 @@
   },
   
   "permissions": [
+	"http://genius.com/amp/",
     "activeTab",
 	"tabs",
     "https://ajax.googleapis.com/"

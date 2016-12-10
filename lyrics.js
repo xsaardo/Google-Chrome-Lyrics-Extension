@@ -1,3 +1,5 @@
+console.log("hi");
+
 var queryInfo = {
 	audible : true,
 }
@@ -9,17 +11,20 @@ var songTab;
 chrome.tabs.query(queryInfo,function(tabInfo){
 	var songInfo = tabInfo[0].title;
 	songTab = tabInfo[0].id;
-	//console.log(songTab);
+	console.log("Original: " + songTab);
 	var currSongArtist = parseTabTitle(songInfo);
+	document.getElementById("title").innerHTML = currSongArtist[0] + " - " + currSongArtist[1] + " - Lyrics";
 	fetchLyrics(currSongArtist[0],currSongArtist[1]);
 	//document.getElementById("lyrics").innerHTML = "HDGJKLSD:";
 });	
 
 // Update lyrics when spotify tab title changes
 chrome.tabs.onUpdated.addListener(function(tabId,changeInfo,tab){
-	if (tabId == songTab) {
-		//console.log(changeInfo.title);
+	console.log("New tab: " + tabId);
+	if (tabId == songTab && tab.audible == true) {
+		console.log(changeInfo);
 		var currSongArtist = parseTabTitle(changeInfo.title)
+		document.getElementById("title").innerHTML = currSongArtist[0] + " - " + currSongArtist[1] + " - Lyrics";
 		fetchLyrics(currSongArtist[0],currSongArtist[1]);
 	}
 })
@@ -39,51 +44,19 @@ function parseTabTitle(tabTitle) {
 
 // Fetch lyrics from genius API
 function fetchLyrics(song,artist) {
-	//console.log("http://api.genius.com/search?q=" + song + " " + artist + "&access_token=Et0edLuuw1UqlTV1QlvgUg0WNPqmAgNnJ5UbbB6giV74xIZyJic2JxvNpzeXYGCa&callback=json")
+
 	$.getJSON("http://api.genius.com/search?q=" + song + " " + artist + "&access_token=Et0edLuuw1UqlTV1QlvgUg0WNPqmAgNnJ5UbbB6giV74xIZyJic2JxvNpzeXYGCa", function(json){
 		try {
 			// Get url of lyrics page
 			var url = json.response.hits[0].result.url;
 			//console.log(url);
 			
-			url = url.substring(18,url.length);
 			//console.log(url);
-			//url = url.slice(0,18) + "amp/" + url.slice(18);
+			url = url.slice(0,18) + "amp/" + url.slice(18);
 			
 			currLyrics = "";
 			
-			httpGet(url).then(function(htmlJSON){
-				//console.log(htmlJSON);
-				// Parse HTML JSON
-				if ("a" in htmlJSON.htmlcode.query.results.body.div[2].p) {
-					for (var i = 0; i < htmlJSON.htmlcode.query.results.body.div[2].p.a.length; i++) {
-						//console.log(htmlJSON.htmlcode.query.results.body.div[2].p.a[i].content);
-						currLyrics = currLyrics + '\n' + htmlJSON.htmlcode.query.results.body.div[2].p.a[i].content;
-					}
-				}
-				
-				//console.log(htmlJSON.htmlcode.query.results.body.div[2].p.content);
-				currLyrics = currLyrics + '\n' + htmlJSON.htmlcode.query.results.body.div[2].p.content;
-				
-				if ("a" in htmlJSON.htmlcode.query.results.body.div[2]) {
-					for (var i = 0; i < htmlJSON.htmlcode.query.results.body.div[2].a.length; i++) {
-						//console.log(htmlJSON.htmlcode.query.results.body.div[2].a[i].content);
-						currLyrics = currLyrics + '\n' + htmlJSON.htmlcode.query.results.body.div[2].a[i].content;
-					}
-				}
-				
-				//console.log(htmlJSON.htmlcode.query.results.body.div[2].content);
-				currLyrics = currLyrics + '\n' + htmlJSON.htmlcode.query.results.body.div[2].content;
-				
-				currLyrics = currLyrics.replace(/\n\s*\n\s*\n/g, '\n\n');
-				
-				console.log(currLyrics);
-				document.getElementById("lyrics").innerHTML = currLyrics
-				//console.log(currLyrics);
-				
-				//console.log("HIIII" + currLyrics);
-			});
-
+			httpGet(url);
 		}
 		catch(err) {
 			console.log(err);
@@ -102,9 +75,42 @@ function fetchLyrics(song,artist) {
 
 // Get the html code for a URL
 function httpGet(theURL) { 
-	return $.getJSON("http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20url%3D%27http%3A%2F%2Fgenius.com%2Famp%2F" + theURL + "'&format=json").then(function(returnHTML) {
-		return {htmlcode:returnHTML};
-	});
+	var xmlhttp = new XMLHttpRequest();
+	var htmlcode;
+	
+	// Function to execute upon state change
+    xmlhttp.onreadystatechange=function()
+    {
+		// Function to execute upon successful http request
+        if (xmlhttp.readyState==4 && xmlhttp.status==200)
+        {
+			console.log("HTTP request successful");
+			// Get html for lyrics page
+			htmlcode = xmlhttp.responseText;
+			
+			// Isolate lyrics div of html
+			htmlcode = htmlcode.substring(htmlcode.search('<div class="lyrics">'));
+			htmlcode = htmlcode.substring(21,htmlcode.search("</p>"));
+			
+			// Strip html tags
+			htmlcode = htmlcode.replace(/<(?:.|\n)*?>/gm, ''); 
+			
+			// Add extra <br> between [segments] for clarity
+			var indices = findAllSubstringInd(htmlcode,"[");
+			for (var index in indices) { 
+				htmlcode = htmlcode.slice(0,indices[index]+index*4) + '<br>' + htmlcode.slice(indices[index]+index*4);
+			}
+			
+			currLyrics = htmlcode;
+			console.log(currLyrics);
+			document.getElementById("lyrics").innerHTML = currLyrics;
+		}
+	}
+	
+	// Send http request
+	console.log("HTTP request sent")
+    xmlhttp.open("GET", theURL, true);
+    xmlhttp.send();
 }
 
 // Helper function: Find all indices of substring in string

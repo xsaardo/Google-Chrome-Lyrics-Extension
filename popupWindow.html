@@ -1,0 +1,47 @@
+<!doctype html>
+<!--
+ This page is shown when the extension button is clicked, because the
+ "browser_action" field in manifest.json contains the "default_popup" key with
+ value "popup.html".
+ -->
+<html>
+  <head>
+    <title id = "title"></title>
+    <style>
+	html, body {
+		margin:0;
+		padding:0;
+		background-color: #1C1C1F
+	}
+	h1 {
+		margin:0;
+	}
+      body {
+        font-family: "Segoe UI", "Lucida Grande", Tahoma, sans-serif;
+        font-size: 100%;
+		background-color: #1C1C1F
+      }
+      #lyrics {
+        white-space: pre-wrap;
+        overflow: hidden;
+        max-width: 800px;
+		text-align: center;
+		font-family: 'Montserrat', sans-serif;
+		font-size: 12px;
+		color: white;
+		background-color: #1C1C1F
+      }
+    </style>
+	<link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
+	<script src="jquery-3.1.1.js"></script>		
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.min.css">
+	<script src="js/bootstrap.min.js"></script>
+	<script src="lyrics.js">console.log("H");</script>
+  </head>
+  <body>
+    <p id = "lyrics">djflka;djflas</p>
+	
+  </body>
+</html>
+
