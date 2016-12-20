@@ -1,30 +1,33 @@
-console.log("hi");
-
+// Get initial lyrics
+console.log("Getting initial lyrics");
 var queryInfo = {
 	audible : true,
 }
-
 var currLyrics;
 var songTab;
-
-// Get initial lyrics
 chrome.tabs.query(queryInfo,function(tabInfo){
 	var songInfo = tabInfo[0].title;
 	songTab = tabInfo[0].id;
-	console.log("Original: " + songTab);
+	console.log("Tab ID " + songTab);
 	var currSongArtist = parseTabTitle(songInfo);
+	console.log(currSongArtist[0] + " - " + currSongArtist[1]);
+	
+	// Update title
 	document.getElementById("title").innerHTML = currSongArtist[0] + " - " + currSongArtist[1] + " - Lyrics";
+	
 	fetchLyrics(currSongArtist[0],currSongArtist[1]);
-	//document.getElementById("lyrics").innerHTML = "HDGJKLSD:";
 });	
 
 // Update lyrics when spotify tab title changes
 chrome.tabs.onUpdated.addListener(function(tabId,changeInfo,tab){
-	console.log("New tab: " + tabId);
+	console.log("Tab changed: " + tabId);
 	if (tabId == songTab && tab.audible == true) {
-		console.log(changeInfo);
 		var currSongArtist = parseTabTitle(changeInfo.title)
+		console.log(currSongArtist[0] + " - " + currSongArtist[1]);
+		
+		// Update title
 		document.getElementById("title").innerHTML = currSongArtist[0] + " - " + currSongArtist[1] + " - Lyrics";
+		
 		fetchLyrics(currSongArtist[0],currSongArtist[1]);
 	}
 })
@@ -44,13 +47,11 @@ function parseTabTitle(tabTitle) {
 
 // Fetch lyrics from genius API
 function fetchLyrics(song,artist) {
-
+	console.log("Fetching Lyrics");
 	$.getJSON("http://api.genius.com/search?q=" + song + " " + artist + "&access_token=Et0edLuuw1UqlTV1QlvgUg0WNPqmAgNnJ5UbbB6giV74xIZyJic2JxvNpzeXYGCa", function(json){
 		try {
 			// Get url of lyrics page
 			var url = json.response.hits[0].result.url;
-			//console.log(url);
-			
 			//console.log(url);
 			url = url.slice(0,18) + "amp/" + url.slice(18);
 			
@@ -60,8 +61,8 @@ function fetchLyrics(song,artist) {
 		}
 		catch(err) {
 			console.log(err);
-			console.log("Lyrics not found")
-			currLyrics = 'Lyrics not found on Genius';
+			console.log("Error")
+			currLyrics = "Lyrics unavailable";
 			return currLyrics;
 		}
 	})
@@ -69,7 +70,7 @@ function fetchLyrics(song,artist) {
 		console.log('Genius search done')
 	})
 	.fail(function() {
-		alert('Failed Genius search request')
+		alert('Failed GET request')
 	});
 }
 
@@ -102,13 +103,14 @@ function httpGet(theURL) {
 			}
 			
 			currLyrics = htmlcode;
-			console.log(currLyrics);
+			console.log("Lyrics Found: " + currLyrics);
+			// Update lyrics
 			document.getElementById("lyrics").innerHTML = currLyrics;
 		}
 	}
 	
 	// Send http request
-	console.log("HTTP request sent")
+	console.log("Sending HTTP request")
     xmlhttp.open("GET", theURL, true);
     xmlhttp.send();
 }
